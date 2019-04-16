@@ -3,6 +3,7 @@ package com.habitrpg.android.habitica.ui.activities
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -29,7 +30,6 @@ import javax.inject.Inject
 import javax.inject.Named
 
 class PartyInviteActivity : BaseActivity() {
-
     @field:[Inject Named(AppModule.NAMED_USER_ID)]
     lateinit var userId: String
     @Inject
@@ -48,6 +48,7 @@ class PartyInviteActivity : BaseActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        android.util.Log.d("PartyInvite", "onCreate")
         super.onCreate(savedInstanceState)
         viewPager.currentItem = 0
 
@@ -83,6 +84,10 @@ class PartyInviteActivity : BaseActivity() {
     }
 
     private fun createResultIntent(): Intent {
+        android.util.Log.d("PartyInvite", "createResultIntent")
+        val toast = Toast.makeText(applicationContext,
+                "Invite Sent!", Toast.LENGTH_LONG)
+        toast.show()
         val intent = Intent()
         val fragment = fragments[viewPager.currentItem]
         if (viewPager.currentItem == 1) {
@@ -118,6 +123,7 @@ class PartyInviteActivity : BaseActivity() {
             }
 
             override fun getPageTitle(position: Int): CharSequence? {
+                android.util.Log.d("PartyInvite", "getPageTitle")
                 return when (position) {
                     0 -> getString(R.string.invite_existing_users)
                     1 -> getString(R.string.by_email)
@@ -130,7 +136,9 @@ class PartyInviteActivity : BaseActivity() {
     }
 
     public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        android.util.Log.d("PartyInviteActivity.kt", "before onActivityResult")
         super.onActivityResult(requestCode, resultCode, data)
+        android.util.Log.d("PartyInviteActivity.kt", "after onActivityResult")
 
         val scanningResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
 
@@ -147,12 +155,14 @@ class PartyInviteActivity : BaseActivity() {
     }
 
     private fun handleUserReceived(user: User) {
+        android.util.Log.d("PartyInviteActivity.kt", "entered handleUserReceived")
         if (this.userIdToInvite == null) {
             return
         }
-
+        android.util.Log.d("PartyInviteActivity.kt", "entered handleUserReceived")
         val toast = Toast.makeText(applicationContext,
-                "Invited: $userIdToInvite", Toast.LENGTH_LONG)
+                "Invite Sent!", Toast.LENGTH_LONG)
+        //toast.getView().setBackgroundColor(java.awt.Color.GREEN)
         toast.show()
 
         val inviteData = HashMap<String, Any>()
