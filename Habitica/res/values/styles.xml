@@ -24,8 +24,19 @@
         <item name="actionOverflowMenuStyle">@style/PopupTheme</item>
         <item name="android:popupMenuStyle">@style/PopupTheme</item>
         <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Material</item>
-
+        <item name="android:textColorLink">@color/brand_400</item>
         <item name="alertDialogTheme">@style/AlertDialogTheme</item>
+    </style>
+
+    <style name="BottomSheetTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="actionBarStyle">@color/transparent</item>
+        <item name="colorPrimary">@color/brand</item>
+        <item name="colorPrimaryDark">@color/brand_50</item>
+        <item name="colorAccent">@color/brand_400</item>
+        <item name="android:windowContentOverlay">@null</item>
     </style>
 
     <style name="AppTheme.ActionBar" parent="AppTheme">
@@ -161,6 +172,7 @@
     <style name="BottomMenu">
         <item name="android:divider">?android:listDivider</item>
         <item name="android:showDividers">middle</item>
+        <item name="android:paddingBottom">@dimen/spacing_medium</item>
     </style>
     
     <style name="BottomMenuItem">
@@ -291,29 +303,12 @@
         <item name="android:layout_marginRight">16dp</item>
     </style>
 
-    <style name="Button">
-        <item name="android:paddingLeft">@dimen/button_padding</item>
-        <item name="android:paddingRight">@dimen/button_padding</item>
-    </style>
-
-    <style name="Button.Purple">
+    <style name="HabiticaButton.Purple" parent="HabiticaButton">
         <item name="android:background">@drawable/rounded_purple_square</item>
         <item name="android:textColor">@color/white</item>
     </style>
 
-    <style name="Button.Purple.Small">
-        <item name="android:paddingLeft">@dimen/button_padding_small</item>
-        <item name="android:paddingRight">@dimen/button_padding_small</item>
-        <item name="android:paddingTop">@dimen/button_padding_vertical_small</item>
-        <item name="android:paddingBottom">@dimen/button_padding_vertical_small</item>
-    </style>
-
-    <style name="Button.Yellow">
-        <item name="android:background">@drawable/rounded_yellow_10_square</item>
-        <item name="android:textColor">@color/white</item>
-    </style>
-
-    <style name="Button.Yellow.Small">
+    <style name="HabiticaButton.Purple.Small" parent="HabiticaButton.Purple">
         <item name="android:paddingLeft">@dimen/button_padding_small</item>
         <item name="android:paddingRight">@dimen/button_padding_small</item>
         <item name="android:paddingTop">@dimen/button_padding_vertical_small</item>
@@ -381,11 +376,12 @@
 
     <style name="HabiticaButton" parent="@style/Widget.AppCompat.Button.Borderless">
         <item name="android:textAllCaps">false</item>
-        <item name="android:minHeight">0dp</item>
-        <item name="android:paddingTop">12dp</item>
-        <item name="android:paddingBottom">12dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">@string/font_family_medium</item>
+        <item name="android:minHeight">@dimen/button_height</item>
         <item name="android:shadowColor">@color/transparent</item>
         <item name="android:textColor">@color/white</item>
+        <item name="android:layout_height">@dimen/button_height</item>
     </style>
 
     <style name="HabiticaButton.Gray" parent="HabiticaButton">
@@ -402,6 +398,10 @@
         <item name="android:background">@drawable/layout_rounded_bg_red</item>
     </style>
 
+    <style name="HabiticaButton.Blue" parent="HabiticaButton">
+        <item name="android:background">@drawable/layout_rounded_bg_blue</item>
+    </style>
+
     <style name="SegmentTitle" parent="Headline">
         <item name="android:layout_marginBottom">@dimen/spacing_medium</item>
     </style>
@@ -412,6 +412,13 @@
 
     <style name="HabiticaButton.Yellow" parent="HabiticaButton">
         <item name="android:background">@drawable/layout_rounded_bg_yellow</item>
+    </style>
+
+    <style name="HabiticaButton.Yellow.Small" parent="HabiticaButton.Yellow">
+        <item name="android:paddingLeft">@dimen/button_padding_small</item>
+        <item name="android:paddingRight">@dimen/button_padding_small</item>
+        <item name="android:paddingTop">@dimen/button_padding_vertical_small</item>
+        <item name="android:paddingBottom">@dimen/button_padding_vertical_small</item>
     </style>
 
     <style name="CurrencyTextView">
@@ -494,13 +501,20 @@
         <item name="colorControlNormal">@color/white</item>
     </style>
 
-    <style name="TextInputLayoutAppearance" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
-        <!-- reference our hint & error styles -->
-        <item name="android:gravity">top</item>
+    <style name="TextInputLayoutAppearanceTheme">
         <item name="boxBackgroundColor">@color/taskform_gray</item>
         <item name="android:textColor">@color/textColorLight</item>
         <item name="android:textColorHint">@color/gray_300</item>
-        <item name="colorControlNormal">@color/white</item>
+        <item name="android:colorControlNormal">@color/gray_400</item>
+        <item name="android:colorControlActivated">@color/brand_400</item>
+        <item name="android:colorControlHighlight">@color/brand_400</item>
+        <item name="android:colorAccent">@color/brand_400</item>
+    </style>
+
+    <style name="TextInputLayoutAppearance" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
+        <item name="boxBackgroundColor">@color/taskform_gray</item>
+        <item name="android:textColor">@color/textColorLight</item>
+        <item name="android:textColorHint">@color/gray_300</item>
     </style>
 
     <style name="TaskFormSectionheader">
@@ -522,6 +536,24 @@
         <item name="android:textSize">16sp</item>
         <item name="android:gravity">center</item>
         <item name="android:textAlignment">gravity</item>
+    </style>
+
+    <style name="ClassSelectionClassButton">
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:background">@drawable/layout_rounded_bg_gray_700</item>
+        <item name="android:paddingStart">@dimen/spacing_medium</item>
+        <item name="android:paddingEnd">@dimen/spacing_medium</item>
+    </style>
+
+    <style name="ToolbarDarkBackArrow" parent="Base.Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorControlNormal">@color/gray_50</item>
+        <item name="android:actionMenuTextColor">@color/gray_50</item>
+    </style>
+
+    <style name="ReportMessageToolbar">
+        <item name="android:actionMenuTextColor">@color/red_50</item>
     </style>
 
     <color name="taskform_gray">#99edecee</color>

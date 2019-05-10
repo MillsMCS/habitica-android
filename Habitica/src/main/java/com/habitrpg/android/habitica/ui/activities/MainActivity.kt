@@ -10,30 +10,26 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
-import android.net.Uri
 import android.os.Build
-import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
-import android.os.Trace
 import android.preference.PreferenceManager
-import com.google.android.material.appbar.AppBarLayout
-import com.google.android.material.appbar.CollapsingToolbarLayout
-import com.google.android.material.tabs.TabLayout
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.appcompat.app.ActionBarDrawerToggle
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.Toolbar
 import android.util.Log
 import android.util.TypedValue
 import android.view.*
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.navigation.findNavController
-import androidx.navigation.fragment.NavHostFragment
 import com.facebook.drawee.view.SimpleDraweeView
+import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.appbar.CollapsingToolbarLayout
+import com.google.android.material.tabs.TabLayout
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.perf.FirebasePerformance
 import com.habitrpg.android.habitica.HabiticaBaseApplication
 import com.habitrpg.android.habitica.R
@@ -56,7 +52,6 @@ import com.habitrpg.android.habitica.proxy.CrashlyticsProxy
 import com.habitrpg.android.habitica.ui.AvatarView
 import com.habitrpg.android.habitica.ui.AvatarWithBarsViewModel
 import com.habitrpg.android.habitica.ui.TutorialView
-import com.habitrpg.android.habitica.ui.fragments.BaseMainFragment
 import com.habitrpg.android.habitica.ui.fragments.NavigationDrawerFragment
 import com.habitrpg.android.habitica.ui.helpers.DataBindingUtils
 import com.habitrpg.android.habitica.ui.helpers.KeyboardUtil
@@ -66,13 +61,13 @@ import com.habitrpg.android.habitica.ui.views.HabiticaIconsHelper
 import com.habitrpg.android.habitica.ui.views.HabiticaSnackbar
 import com.habitrpg.android.habitica.ui.views.HabiticaSnackbar.SnackbarDisplayType
 import com.habitrpg.android.habitica.ui.views.ValueBar
+import com.habitrpg.android.habitica.ui.views.bottombar.BottomBar
 import com.habitrpg.android.habitica.ui.views.yesterdailies.YesterdailyDialog
 import com.habitrpg.android.habitica.userpicture.BitmapUtils
 import com.habitrpg.android.habitica.widget.AvatarStatsWidgetProvider
 import com.habitrpg.android.habitica.widget.DailiesWidgetProvider
 import com.habitrpg.android.habitica.widget.HabitButtonWidgetProvider
 import com.habitrpg.android.habitica.widget.TodoListWidgetProvider
-import com.habitrpg.android.habitica.ui.views.bottombar.BottomBar
 import io.reactivex.Completable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Action
@@ -81,8 +76,6 @@ import io.reactivex.schedulers.Schedulers
 import io.realm.Realm
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
-import java.lang.IllegalStateException
-import java.lang.ref.WeakReference
 import java.util.*
 import javax.inject.Inject
 
@@ -130,7 +123,7 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
     @Inject
     internal lateinit var taskAlarmManager: TaskAlarmManager
     @Inject
-    internal lateinit var remoteConfigManager: RemoteConfigManager
+    internal lateinit var appConfigManager: AppConfigManager
 
     val floatingMenuWrapper: ViewGroup by bindView(R.id.floating_menu_wrapper)
     internal val bottomNavigation: BottomBar by bindView(R.id.bottom_navigation)
@@ -146,7 +139,6 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
 
     var user: User? = null
 
-    private var activeFragment: WeakReference<BaseMainFragment>? = null
     private var avatarInHeader: AvatarWithBarsViewModel? = null
     private var faintDialog: AlertDialog? = null
     private var sideAvatarView: AvatarView? = null
@@ -359,7 +351,6 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
             preferences?.sound.notNull { soundManager.soundTheme = it }
             runOnUiThread {
                 updateSidebar()
-                activeFragment?.get()?.updateUserData(user)
             }
 
             displayDeathDialogIfNeeded()
@@ -405,10 +396,15 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
         }
         val statsItem = drawerFragment?.getItemWithIdentifier(NavigationDrawerFragment.SIDEBAR_STATS)
         if (statsItem != null) {
-            if (user?.stats?.lvl ?: 0 >= 10 && user?.stats?.points ?: 0 > 0) {
-                statsItem.additionalInfo = user?.stats?.points.toString()
+            if (user?.preferences?.disableClasses != true) {
+                if (user?.stats?.lvl ?: 0 >= 10 && user?.stats?.points ?: 0 > 0) {
+                    statsItem.additionalInfo = user?.stats?.points.toString()
+                } else {
+                    statsItem.additionalInfo = null
+                }
+                statsItem.isVisible = true
             } else {
-                statsItem.additionalInfo = null
+                statsItem.isVisible = false
             }
             drawerFragment?.updateItem(statsItem)
         }
@@ -425,7 +421,6 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
                 super.onBackPressed()
             } catch (ignored: Exception) {
             }
-             this.activeFragment?.get()?.updateUserData(user)
         }
     }
 
@@ -488,14 +483,13 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
                         HabiticaSnackbar.showSnackbar(floatingMenuWrapper, null, snackbarMessage, BitmapDrawable(resources, HabiticaIconsHelper.imageOfGold()), ContextCompat.getColor(this, R.color.yellow_10), "-" + event.Reward.value, SnackbarDisplayType.NORMAL)
                     }, RxErrorHandler.handleEmptyError())
         } else {
-            buyRewardUseCase.observable(BuyRewardUseCase.RequestValues(user, event.Reward))
-                    .subscribe(Consumer {
-                        HabiticaSnackbar.showSnackbar(floatingMenuWrapper, null, getString(R.string.notification_purchase_reward),
-                                BitmapDrawable(resources, HabiticaIconsHelper.imageOfGold()),
-                                ContextCompat.getColor(this, R.color.yellow_10),
-                                "-" + event.Reward.value.toInt(),
-                                SnackbarDisplayType.DROP)
-                    }, RxErrorHandler.handleEmptyError())
+            buyRewardUseCase.observable(BuyRewardUseCase.RequestValues(user, event.Reward) {
+                HabiticaSnackbar.showSnackbar(floatingMenuWrapper, null, getString(R.string.notification_purchase_reward),
+                        BitmapDrawable(resources, HabiticaIconsHelper.imageOfGold()),
+                        ContextCompat.getColor(this, R.color.yellow_10),
+                        "-" + event.Reward.value.toInt(),
+                        SnackbarDisplayType.DROP)
+            }).subscribe(Consumer {}, RxErrorHandler.handleEmptyError())
         }
     }
 
@@ -520,32 +514,31 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
         if (event.usingEgg == null || event.usingHatchingPotion == null) {
             return
         }
-        this.inventoryRepository.hatchPet(event.usingEgg, event.usingHatchingPotion)
-                .subscribe(Consumer {
-                    val petWrapper = View.inflate(this, R.layout.pet_imageview, null) as? FrameLayout
-                    val petImageView = petWrapper?.findViewById(R.id.pet_imageview) as? SimpleDraweeView
+        this.inventoryRepository.hatchPet(event.usingEgg, event.usingHatchingPotion) {
+            val petWrapper = View.inflate(this, R.layout.pet_imageview, null) as? FrameLayout
+            val petImageView = petWrapper?.findViewById(R.id.pet_imageview) as? SimpleDraweeView
 
-                    DataBindingUtils.loadImage(petImageView, "Pet-" + event.usingEgg.key + "-" + event.usingHatchingPotion.key)
-                    val potionName = event.usingHatchingPotion.text
-                    val eggName = event.usingEgg.text
-                    val dialog = AlertDialog.Builder(this@MainActivity)
-                            .setTitle(getString(R.string.hatched_pet_title, potionName, eggName))
-                            .setView(petWrapper)
-                            .setPositiveButton(R.string.close) { hatchingDialog, _ -> hatchingDialog.dismiss() }
-                            .setNeutralButton(R.string.share) { hatchingDialog, _ ->
-                                val event1 = ShareEvent()
-                                event1.sharedMessage = getString(R.string.share_hatched, potionName, eggName) + " https://habitica.com/social/hatch-pet"
-                                val sharedImage = Bitmap.createBitmap(140, 140, Bitmap.Config.ARGB_8888)
-                                val canvas = Canvas(sharedImage)
-                                canvas.drawColor(ContextCompat.getColor(this, R.color.brand_300))
-                                petImageView?.drawable?.draw(canvas)
-                                event1.shareImage = sharedImage
-                                EventBus.getDefault().post(event1)
-                                hatchingDialog.dismiss()
-                            }
-                            .create()
-                    dialog.show()
-                }, RxErrorHandler.handleEmptyError())
+            DataBindingUtils.loadImage(petImageView, "Pet-" + event.usingEgg.key + "-" + event.usingHatchingPotion.key)
+            val potionName = event.usingHatchingPotion.text
+            val eggName = event.usingEgg.text
+            val dialog = AlertDialog.Builder(this@MainActivity)
+                    .setTitle(getString(R.string.hatched_pet_title, potionName, eggName))
+                    .setView(petWrapper)
+                    .setPositiveButton(R.string.close) { hatchingDialog, _ -> hatchingDialog.dismiss() }
+                    .setNeutralButton(R.string.share) { hatchingDialog, _ ->
+                        val event1 = ShareEvent()
+                        event1.sharedMessage = getString(R.string.share_hatched, potionName, eggName) + " https://habitica.com/social/hatch-pet"
+                        val sharedImage = Bitmap.createBitmap(140, 140, Bitmap.Config.ARGB_8888)
+                        val canvas = Canvas(sharedImage)
+                        canvas.drawColor(ContextCompat.getColor(this, R.color.brand_300))
+                        petImageView?.drawable?.draw(canvas)
+                        event1.shareImage = sharedImage
+                        EventBus.getDefault().post(event1)
+                        hatchingDialog.dismiss()
+                    }
+                    .create()
+            dialog.show()
+        }.subscribe(Consumer { }, RxErrorHandler.handleEmptyError())
     }
 
     @Subscribe
@@ -599,7 +592,7 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
 
     private fun displayDeathDialogIfNeeded() {
 
-        if (user?.stats?.hp ?: 0.0 > 0) {
+        if (user?.stats?.hp ?: 1.0 > 0) {
             return
         }
 
@@ -646,6 +639,7 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
         if (hostConfig.hasAuthentication()) {
             this.userRepository.retrieveUser(true)
                     .doOnNext { user1 ->
+                        FirebaseAnalytics.getInstance(this).setUserProperty("has_party", if (user1.party?.id?.isNotEmpty() == true) "true" else "false")
                         pushNotificationManager.setUser(user1)
                         pushNotificationManager.addPushDeviceUsingStoredToken()
                     }
@@ -653,12 +647,6 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
                     .flatMap { inventoryRepository.retrieveWorldState() }
                     .subscribe(Consumer { }, RxErrorHandler.handleEmptyError())
         }
-    }
-
-    @Subscribe
-    fun displayClassSelectionActivity(event: SelectClassEvent) {
-        checkClassSelectionUseCase.observable(CheckClassSelectionUseCase.RequestValues(user, event, this))
-                .subscribe(Consumer { }, RxErrorHandler.handleEmptyError())
     }
 
     private fun displayTutorialStep(step: TutorialStep, text: String, canBeDeferred: Boolean) {
@@ -726,7 +714,7 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
         val sharingIntent = Intent(Intent.ACTION_SEND)
         sharingIntent.type = "*/*"
         sharingIntent.putExtra(Intent.EXTRA_TEXT, event.sharedMessage)
-        val f = BitmapUtils.saveToShareableFile(filesDir.toString() + "/shared_images", "share.png", event.shareImage)
+        val f = BitmapUtils.saveToShareableFile("$filesDir/shared_images", "share.png", event.shareImage)
         val fileUri = FileProvider.getUriForFile(this, getString(R.string.content_provider), f)
         sharingIntent.putExtra(Intent.EXTRA_STREAM, fileUri)
         val resInfoList = this.packageManager.queryIntentActivities(sharingIntent, PackageManager.MATCH_DEFAULT_ONLY)
@@ -741,12 +729,12 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
     fun onEvent(event: TaskCheckedCommand) {
         when (event.Task.type) {
             Task.TYPE_DAILY -> {
-                dailyCheckUseCase.observable(DailyCheckUseCase.RequestValues(user, event.Task, !event.Task.completed))
-                        .subscribe(Consumer<TaskScoringResult> { this.displayTaskScoringResponse(it) }, RxErrorHandler.handleEmptyError())
+                dailyCheckUseCase.observable(DailyCheckUseCase.RequestValues(user, event.Task, !event.Task.completed) { result -> displayTaskScoringResponse(result)})
+                        .subscribe(Consumer<TaskScoringResult> { }, RxErrorHandler.handleEmptyError())
             }
             Task.TYPE_TODO -> {
-                todoCheckUseCase.observable(TodoCheckUseCase.RequestValues(user, event.Task, !event.Task.completed))
-                        .subscribe(Consumer<TaskScoringResult> { this.displayTaskScoringResponse(it) }, RxErrorHandler.handleEmptyError())
+                todoCheckUseCase.observable(TodoCheckUseCase.RequestValues(user, event.Task, !event.Task.completed) { result -> displayTaskScoringResponse(result)})
+                        .subscribe(Consumer<TaskScoringResult> { }, RxErrorHandler.handleEmptyError())
             }
         }
     }
@@ -758,8 +746,8 @@ open class MainActivity : BaseActivity(), TutorialView.OnTutorialReaction {
 
     @Subscribe
     fun onEvent(event: HabitScoreEvent) {
-        habitScoreUseCase.observable(HabitScoreUseCase.RequestValues(user, event.habit, event.Up))
-                .subscribe(Consumer<TaskScoringResult> { this.displayTaskScoringResponse(it) }, RxErrorHandler.handleEmptyError())
+        habitScoreUseCase.observable(HabitScoreUseCase.RequestValues(user, event.habit, event.Up) { result -> displayTaskScoringResponse(result)})
+                .subscribe(Consumer<TaskScoringResult> { }, RxErrorHandler.handleEmptyError())
     }
 
     private fun checkMaintenance() {

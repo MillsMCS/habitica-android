@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.Observer
 import com.habitrpg.android.habitica.R
 import com.habitrpg.android.habitica.components.AppComponent
 import com.habitrpg.android.habitica.data.SocialRepository
@@ -22,7 +21,7 @@ import javax.inject.Inject
 
 class PartyMemberListFragment : BaseFragment() {
 
-    lateinit var viewModel: PartyViewModel
+    var viewModel: PartyViewModel? = null
 
     @Inject
     lateinit var socialRepository: SocialRepository
@@ -51,17 +50,7 @@ class PartyMemberListFragment : BaseFragment() {
         recyclerView?.itemAnimator = SafeDefaultItemAnimator()
 
         refreshLayout?.setOnRefreshListener { this.refreshMembers() }
-
         getUsers()
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-
-        viewModel.getGroupData().observe(viewLifecycleOwner, Observer {
-            adapter?.leaderID = it?.leaderID
-            adapter?.notifyDataSetChanged()
-        })
     }
 
     private fun refreshMembers() {

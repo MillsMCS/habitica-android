@@ -11,8 +11,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.habitrpg.android.habitica.R
 import com.habitrpg.android.habitica.components.AppComponent
-import com.habitrpg.android.habitica.helpers.RemoteConfigManager
-import com.habitrpg.android.habitica.prefs.scanner.IntentIntegrator
+import com.habitrpg.android.habitica.helpers.AppConfigManager
 import com.habitrpg.android.habitica.ui.fragments.BaseFragment
 import com.habitrpg.android.habitica.ui.helpers.bindView
 import com.habitrpg.android.habitica.ui.helpers.resetViews
@@ -22,13 +21,14 @@ import javax.inject.Inject
 class PartyInviteFragment : BaseFragment() {
 
     @Inject
-    lateinit var configManager: RemoteConfigManager
+    lateinit var configManager: AppConfigManager
 
     var isEmailInvite: Boolean = false
 
     private val inviteDescription: TextView? by bindView(R.id.inviteDescription)
     private val invitationWrapper: LinearLayout? by bindView(R.id.invitationWrapper)
     private val addInviteButton: Button? by bindView(R.id.addInviteButton)
+    private val snackbarView: ViewGroup by bindView(R.id.snackbar_view)
 
     val values: Array<String>
         get() {

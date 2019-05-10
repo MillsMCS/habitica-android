@@ -22,7 +22,23 @@
     </entry>
     <entry>
         <key>enableLocalChanges</key>
-        <value>true</value>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>enableLocalTaskScoring</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>lastVersionNumber</key>
+        <value>1.0</value>
+    </entry>
+    <entry>
+        <key>lastVersionCode</key>
+        <value>0</value>
+    </entry>
+    <entry>
+        <key>noPartyLinkPartyGuild</key>
+        <value>false</value>
     </entry>
 </defaultsMap>
     <!-- END xml_defaults -->

@@ -35,7 +35,7 @@ class YesterdailyDialog private constructor(context: Context, private val userRe
         val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as? LayoutInflater
         val view = inflater?.inflate(R.layout.dialog_yesterdaily, null)
         this.setView(view)
-        this.setButton(AlertDialog.BUTTON_POSITIVE,
+        this.setButton(BUTTON_POSITIVE,
                 context.getString(R.string.start_day)
         ) { _, _ -> }
 
@@ -51,6 +51,11 @@ class YesterdailyDialog private constructor(context: Context, private val userRe
         if (inflater != null) {
             createTaskViews(inflater)
         }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        isDisplaying = true
     }
 
     private fun runCron() {
@@ -151,6 +156,7 @@ class YesterdailyDialog private constructor(context: Context, private val userRe
                         .map { tasks -> tasks.where().equalTo("isDue", true).notEqualTo("completed", true).notEqualTo("yesterDaily", false).findAll() }
                         .flatMapMaybe<List<Task>> { tasks -> taskRepository.getTaskCopies(tasks).firstElement() }
                         .retry(1)
+                        .throttleFirst(2, TimeUnit.SECONDS)
                         .subscribe(Consumer { tasks ->
                             if (isDisplaying) {
                                 return@Consumer
@@ -179,7 +185,6 @@ class YesterdailyDialog private constructor(context: Context, private val userRe
             dialog.setCanceledOnTouchOutside(false)
             if (!activity.isFinishing) {
                 dialog.show()
-                isDisplaying = true
             }
         }
     }

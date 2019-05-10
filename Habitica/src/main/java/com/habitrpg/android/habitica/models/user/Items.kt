@@ -1,17 +1,9 @@
 package com.habitrpg.android.habitica.models.user
 
-import com.habitrpg.android.habitica.models.inventory.Egg
-import com.habitrpg.android.habitica.models.inventory.Food
-import com.habitrpg.android.habitica.models.inventory.HatchingPotion
-import com.habitrpg.android.habitica.models.inventory.Mount
-import com.habitrpg.android.habitica.models.inventory.Pet
-import com.habitrpg.android.habitica.models.inventory.QuestContent
-
-import java.util.Date
-
 import io.realm.RealmList
 import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
+import java.util.*
 
 open class Items : RealmObject {
 
@@ -49,13 +41,23 @@ open class Items : RealmObject {
                     it.itemType = "quests"
                 }
             }
+            pets?.forEach {
+                if (!it.isManaged) {
+                    it.userID = userId
+                }
+            }
+            mounts?.forEach {
+                if (!it.isManaged) {
+                    it.userID = userId
+                }
+            }
         }
     var eggs: RealmList<OwnedItem>? = null
     var food: RealmList<OwnedItem>? = null
     var hatchingPotions: RealmList<OwnedItem>? = null
     var quests: RealmList<OwnedItem>? = null
-    var pets: RealmList<Pet>? = null
-    var mounts: RealmList<Mount>? = null
+    var pets: RealmList<OwnedPet>? = null
+    var mounts: RealmList<OwnedMount>? = null
     var currentMount: String? = null
     var currentPet: String? = null
     var lastDrop_count: Int = 0

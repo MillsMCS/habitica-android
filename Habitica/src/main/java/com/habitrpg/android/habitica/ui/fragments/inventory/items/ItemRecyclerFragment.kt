@@ -14,6 +14,7 @@ import com.habitrpg.android.habitica.extensions.notNull
 import com.habitrpg.android.habitica.helpers.MainNavigationController
 import com.habitrpg.android.habitica.helpers.RxErrorHandler
 import com.habitrpg.android.habitica.models.inventory.*
+import com.habitrpg.android.habitica.models.user.OwnedPet
 import com.habitrpg.android.habitica.models.user.User
 import com.habitrpg.android.habitica.ui.adapter.inventory.ItemRecyclerAdapter
 import com.habitrpg.android.habitica.ui.fragments.BaseFragment
@@ -22,7 +23,6 @@ import com.habitrpg.android.habitica.ui.helpers.SafeDefaultItemAnimator
 import com.habitrpg.android.habitica.ui.helpers.bindView
 import com.habitrpg.android.habitica.ui.helpers.resetViews
 import io.reactivex.functions.Consumer
-import io.realm.OrderedRealmCollection
 import javax.inject.Inject
 
 class ItemRecyclerFragment : BaseFragment() {
@@ -192,7 +192,14 @@ class ItemRecyclerFragment : BaseFragment() {
             }, RxErrorHandler.handleEmptyError()))
         }
 
-        compositeSubscription.add(inventoryRepository.getOwnedPets().subscribe(Consumer { adapter?.setOwnedPets(it) }, RxErrorHandler.handleEmptyError()))
+        compositeSubscription.add(inventoryRepository.getPets().subscribe(Consumer { adapter?.setExistingPets(it) }, RxErrorHandler.handleEmptyError()))
+        compositeSubscription.add(inventoryRepository.getOwnedPets().firstElement()
+                .map { ownedMounts ->
+                    val mountMap = mutableMapOf<String, OwnedPet>()
+                    ownedMounts.forEach { mountMap[it.key ?: ""] = it }
+                    return@map mountMap
+                }
+                .subscribe(Consumer { adapter?.setOwnedPets(it) }, RxErrorHandler.handleEmptyError()))
     }
 
     private fun openMarket() {

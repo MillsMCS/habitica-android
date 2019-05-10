@@ -1,9 +1,7 @@
 package com.habitrpg.android.habitica.ui.views.social
 
 import android.content.Context
-import android.graphics.drawable.BitmapDrawable
 import androidx.core.content.ContextCompat
-import androidx.core.widget.ImageViewCompat
 import androidx.appcompat.widget.AppCompatImageButton
 import android.util.AttributeSet
 import android.view.Gravity
@@ -16,7 +14,6 @@ import android.widget.TextView
 import androidx.core.content.edit
 import com.facebook.drawee.view.SimpleDraweeView
 import com.habitrpg.android.habitica.R
-import com.habitrpg.android.habitica.extensions.backgroundCompat
 import com.habitrpg.android.habitica.ui.helpers.bindView
 import com.habitrpg.android.habitica.models.inventory.Quest
 import com.habitrpg.android.habitica.models.inventory.QuestContent
@@ -24,7 +21,6 @@ import com.habitrpg.android.habitica.models.user.User
 import com.habitrpg.android.habitica.ui.helpers.DataBindingUtils
 import com.habitrpg.android.habitica.ui.views.HabiticaIconsHelper
 import com.habitrpg.android.habitica.ui.views.HabiticaProgressBar
-import com.habitrpg.android.habitica.ui.views.ValueBar
 
 class QuestMenuView : LinearLayout {
 
@@ -84,20 +80,20 @@ class QuestMenuView : LinearLayout {
     }
 
     fun hideBossArt() {
-        topView.orientation = LinearLayout.HORIZONTAL
+        topView.orientation = HORIZONTAL
         topView.setBackgroundColor(questContent?.colors?.mediumColor ?: 0)
         bossNameView.gravity = Gravity.LEFT
-        bossNameView.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1F)
+        bossNameView.layoutParams = LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1F)
         bossArtView.visibility = View.GONE
         typeTextView.setTextColor(questContent?.colors?.extraLightColor ?: 0)
         closeButton.visibility = View.GONE
     }
 
     fun showBossArt() {
-        topView.orientation = LinearLayout.VERTICAL
+        topView.orientation = VERTICAL
         topView.setBackgroundColor(ContextCompat.getColor(context, R.color.transparent))
         bossNameView.gravity = Gravity.RIGHT
-        bossNameView.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        bossNameView.layoutParams = LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         bossArtView.visibility = View.VISIBLE
         typeTextView.setTextColor(ContextCompat.getColor(context, R.color.white))
         closeButton.visibility = View.VISIBLE
