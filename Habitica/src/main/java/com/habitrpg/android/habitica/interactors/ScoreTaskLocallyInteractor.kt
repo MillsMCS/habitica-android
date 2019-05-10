@@ -6,7 +6,7 @@ import com.habitrpg.android.habitica.models.responses.TaskDirectionData
 import com.habitrpg.android.habitica.models.tasks.Task
 import com.habitrpg.android.habitica.models.user.Stats
 import com.habitrpg.android.habitica.models.user.User
-import java.util.ArrayList
+import java.util.*
 
 class ScoreTaskLocallyInteractor {
     companion object {
@@ -25,7 +25,7 @@ class ScoreTaskLocallyInteractor {
 
             if (task.checklist?.size ?: 0 > 0) {
                 if (task.type == Task.TYPE_TODO) {
-                    nextDelta *= 1 + (task.checklist?.map { if (it.completed) 1 else 0 }?.reduce { acc, i -> 0 }
+                    nextDelta *= 1 + (task.checklist?.map { if (it.completed) 1 else 0 }?.reduce { _, _ -> 0 }
                             ?: 0)
                 }
             }
@@ -86,7 +86,7 @@ class ScoreTaskLocallyInteractor {
         }
 
         private fun subtractPoints(result: TaskDirectionData, delta: Double, stats: Stats, computedStats: Stats, task: Task) {
-            var conBonus = 1f - ((computedStats.con?.toFloat() ?: 0f) / 250f)
+            var conBonus = 1f - ((computedStats.constitution?.toFloat() ?: 0f) / 250f)
             if (conBonus < 0.1) {
                 conBonus = 0.1f
             }
@@ -95,7 +95,7 @@ class ScoreTaskLocallyInteractor {
         }
 
         private fun addPoints(result: TaskDirectionData, delta: Double, stats: Stats, computedStats: Stats, task: Task, direction: TaskDirection) {
-            val intBonus = 1f + ((computedStats._int?.toFloat() ?: 0f) * 0.025f)
+            val intBonus = 1f + ((computedStats.intelligence?.toFloat() ?: 0f) * 0.025f)
             result.exp = (stats.exp
                     ?: 0.0) + Math.round(delta * intBonus * task.priority * 6).toDouble()
 
@@ -126,9 +126,9 @@ class ScoreTaskLocallyInteractor {
             totalConstitution += user.stats?.buffs?.getCon()?.toInt() ?: 0
             totalPerception += user.stats?.buffs?.getPer()?.toInt() ?: 0
 
-            totalStrength += user.stats?.str ?: 0
-            totalIntelligence += user.stats?._int ?: 0
-            totalConstitution += user.stats?.con ?: 0
+            totalStrength += user.stats?.strength ?: 0
+            totalIntelligence += user.stats?.intelligence ?: 0
+            totalConstitution += user.stats?.constitution ?: 0
             totalPerception += user.stats?.per ?: 0
 
             val outfit = user.items?.gear?.equipped
@@ -145,9 +145,9 @@ class ScoreTaskLocallyInteractor {
             }
 
             val stats = Stats()
-            stats.str = totalStrength
-            stats._int = totalIntelligence
-            stats.con = totalConstitution
+            stats.strength = totalStrength
+            stats.intelligence = totalIntelligence
+            stats.constitution = totalConstitution
             stats.per = totalPerception
 
             return stats

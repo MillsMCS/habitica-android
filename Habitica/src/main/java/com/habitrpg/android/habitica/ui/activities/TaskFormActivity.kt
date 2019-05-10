@@ -16,6 +16,7 @@ import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatCheckBox
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
@@ -30,6 +31,7 @@ import com.habitrpg.android.habitica.data.UserRepository
 import com.habitrpg.android.habitica.extensions.OnChangeTextWatcher
 import com.habitrpg.android.habitica.extensions.dpToPx
 import com.habitrpg.android.habitica.helpers.RxErrorHandler
+import com.habitrpg.android.habitica.helpers.TaskAlarmManager
 import com.habitrpg.android.habitica.models.Tag
 import com.habitrpg.android.habitica.models.tasks.HabitResetOption
 import com.habitrpg.android.habitica.models.tasks.Task
@@ -44,12 +46,15 @@ import javax.inject.Inject
 
 class TaskFormActivity : BaseActivity() {
 
+    private var isSaving: Boolean = false
     @Inject
     lateinit var userRepository: UserRepository
     @Inject
     lateinit var taskRepository: TaskRepository
     @Inject
     lateinit var tagRepository: TagRepository
+    @Inject
+    lateinit var taskAlarmManager: TaskAlarmManager
 
     private val toolbar: Toolbar by bindView(R.id.toolbar)
     private val scrollView: NestedScrollView by bindView(R.id.scroll_view)
@@ -264,6 +269,9 @@ class TaskFormActivity : BaseActivity() {
     }
 
     private fun fillForm(task: Task) {
+        if (!task.isValid) {
+            return
+        }
         canSave = true
         textEditText.setText(task.text)
         notesEditText.setText(task.notes)
@@ -272,7 +280,11 @@ class TaskFormActivity : BaseActivity() {
             Task.TYPE_HABIT -> {
                 habitScoringButtons.isPositive = task.up ?: false
                 habitScoringButtons.isNegative = task.down ?: false
-                task.frequency?.let { habitResetStreakButtons.selectedResetOption = HabitResetOption.valueOf(it.toUpperCase()) }
+                task.frequency?.let {
+                    if (it.isNotBlank()) {
+                        habitResetStreakButtons.selectedResetOption = HabitResetOption.valueOf(it.toUpperCase(Locale.US))
+                    }
+                }
                 habitAdjustPositiveStreakView.setText((task.counterUp ?: 0).toString())
                 habitAdjustNegativeStreakView.setText((task.counterDown ?: 0).toString())
             }
@@ -324,6 +336,10 @@ class TaskFormActivity : BaseActivity() {
     }
 
     private fun saveTask() {
+        if (isSaving) {
+            return
+        }
+        isSaving = true
         var thisTask = task
         if (thisTask == null) {
             thisTask = Task()
@@ -373,6 +389,10 @@ class TaskFormActivity : BaseActivity() {
             } else {
                 taskRepository.updateTaskInBackground(thisTask)
             }
+
+            if (thisTask.type == Task.TYPE_DAILY || thisTask.type == Task.TYPE_TODO) {
+                taskAlarmManager.scheduleAlarmsForTask(thisTask)
+            }
         } else {
                 resultIntent.putExtra(PARCELABLE_TASK, thisTask)
         }
@@ -386,9 +406,14 @@ class TaskFormActivity : BaseActivity() {
     }
 
     private fun deleteTask() {
-        task?.id?.let { taskRepository.deleteTask(it).subscribe(Consumer {  }, RxErrorHandler.handleEmptyError()) }
-        dismissKeyboard()
-        finish()
+        AlertDialog.Builder(this)
+                .setTitle(R.string.are_you_sure)
+                .setPositiveButton(R.string.delete_task) { _, _ ->
+                    task?.id?.let { taskRepository.deleteTask(it).subscribe(Consumer {  }, RxErrorHandler.handleEmptyError()) }
+                    dismissKeyboard()
+                    finish()
+                }
+                .setNegativeButton(android.R.string.cancel, null).show()
     }
 
     private fun dismissKeyboard() {
